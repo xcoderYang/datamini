@@ -3,7 +3,7 @@
 import pandas as pd
 import jieba
 import numpy as np
-from func import tran, keysIn
+from func import tran, keysIn, tranStr, idToContain, countKeys
 
 # 测试集数据
 tableQues = pd.read_csv('../emotion/train/Train_DataSet.csv', header=0, encoding='utf-8', dtype=str)
@@ -11,9 +11,14 @@ tableQues = pd.read_csv('../emotion/train/Train_DataSet.csv', header=0, encoding
 # 测试集答案
 tableAns = pd.read_csv('../emotion/train/Train_DataSet_Label.csv', header=0, encoding='utf-8', dtype=str)
 
+stop = pd.read_csv('../emotion/train/stop_utf8.xlsx', header=0, encoding='utf-8', dtype=str, error_bad_lines=False)
+
+print(stop)
+
+input()
 #本地测试，取前5条数据
-testQues = tableQues.head(5)
-testAns = tableAns.head(5)
+testQues = tableQues
+testAns = tableAns
 
 positive = []
 positiveKeys = []
@@ -30,13 +35,34 @@ negative = list(testAns[testAns['label']=='2']['id'])
 
 other = list(testAns[testAns['label']=='0']['id'])
 
-print(positive)
-print(negative)
-print(other)
 
-# #title计数
-# title = testQues['title']
-# title = tran(title, False)
+positiveTitlePd = idToContain(positive, 'title', testQues)
+negativeTitlePd = idToContain(negative, 'title', testQues)
+otherTitlePd = idToContain(other, 'title', testQues)
+
+positiveContentPd = idToContain(positive, 'content', testQues)
+negativeContentPd = idToContain(negative, 'content', testQues)
+otherContentPd = idToContain(other, 'content', testQues)
+
+print(positiveTitlePd)
+print(negativeTitlePd)
+print(otherTitlePd)
+
+# positive = list(test)
+#title计数
+title = testQues['title']
+positiveKeys = countKeys(positiveTitlePd)
+negativeKeys = countKeys(negativeTitlePd)
+otherKeys = countKeys(otherTitlePd)
+
+
+
+positiveKeys.to_csv('./positiveKeys.csv', sep=',', header=True, index=True)
+negativeKeys.to_csv('./negativeKeys.csv', sep=',', header=True, index=True)
+otherKeys.to_csv('./otherKeys.csv', sep=',', header=True, index=True)
+print('success Input')
+
+# title = tran(negativeTitlePd, False)
 # titleKeys = []
 # for i in range(0, len(title)):
 #   for j in range(0, len(title[i])):
