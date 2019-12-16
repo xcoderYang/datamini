@@ -2,6 +2,10 @@ import pandas as pd
 import jieba
 import numpy as np
 
+#停用词集
+stop = pd.read_csv('../emotion/train/stop.txt', header=0, encoding='utf-8', dtype=str, error_bad_lines=False)
+stop = list(stop['keys'])
+
 #筛选中文字符
 def charDelete(uchar):
   if len(uchar)<2:
@@ -30,20 +34,6 @@ def tranStr(str):
   words = list(filter(charDelete, words))
   return words
 
-#arr = [{key:<str>, count:<num>}]
-#检测 arr中是否存在 key
-def keysIn(key, arr):
-  for i in range(0, len(arr)):
-    if(arr[i]['key'] == key):
-      arr[i]['count'] = arr[i]['count']+1
-      break
-  else:
-    arr.append({
-      'key': key,
-      'count': 1
-    })
-  return arr
-
 def idToContain(group, contain, all):
   if len(group) == 0:
     return []
@@ -58,9 +48,31 @@ def idToContain(group, contain, all):
 
 def countKeys(pdCol):
   title = tran(pdCol, False)
-  titleKeys = []
+  titleKeys = {}
   for i in range(0, len(title)):
     for j in range(0, len(title[i])):
-      titleKeys = keysIn(title[i][j], titleKeys)
-  ans = pd.DataFrame(titleKeys).sort_values(by='count',ascending=False)
+      if title[i][j] in stop:
+        continue
+      if title[i][j] in titleKeys:
+        titleKeys[title[i][j]] = titleKeys[title[i][j]]+1
+      else:
+        titleKeys[title[i][j]] = 1
+  ans = []
+  for i in titleKeys:
+    if titleKeys[i]<10:
+      continue
+    ans.append({
+      'key': i,
+      'count': titleKeys[i]
+    })
+  ans = pd.DataFrame(ans).sort_values(by='count',ascending=False)
   return ans
+
+def listToDict(contentWords):
+  dictWords = {}
+  for word in contentWords:
+    if word in dictWords:
+      dictWords[word] = dictWords[word]+1
+    else:
+      dictWords[word] = 1
+  return dictWords
