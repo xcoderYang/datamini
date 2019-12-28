@@ -1,6 +1,7 @@
 import pandas as pd
 import jieba
 import numpy as np
+import math
 
 #停用词集
 stop = pd.read_csv('../emotion/train/stop.txt', header=0, encoding='utf-8', dtype=str, error_bad_lines=False)
@@ -28,12 +29,6 @@ def tran(data, tag):
   else:
     return ans
 
-def tranStr(str):
-  words = " ".join(jieba.cut(str))
-  words = words.split(' ')
-  words = list(filter(charDelete, words))
-  return words
-
 def idToContain(group, contain, all):
   if len(group) == 0:
     return []
@@ -46,10 +41,15 @@ def idToContain(group, contain, all):
   temp_pd = temp_pd[0]
   return temp_pd
 
-def countKeys(pdCol):
+#统计key出现的次数，均值，方差，和概率
+def countKeys(pdCol, dataTotalCount):
   title = tran(pdCol, False)
   titleKeys = {}
+  tempTitleKeys = {}
+  keysCountObj = {}
   for i in range(0, len(title)):
+    # 应该在这个循环里面统计
+    tempTitleKeys = {}
     for j in range(0, len(title[i])):
       if title[i][j] in stop:
         continue
@@ -57,17 +57,45 @@ def countKeys(pdCol):
         titleKeys[title[i][j]] = titleKeys[title[i][j]]+1
       else:
         titleKeys[title[i][j]] = 1
+
+      if title[i][j] in tempTitleKeys:
+        tempTitleKeys[title[i][j]] = tempTitleKeys[title[i][j]]+1
+      else:
+        tempTitleKeys[title[i][j]] = 1
+    for j in tempTitleKeys:
+      if j in keysCountObj:
+        keysCountObj[j].append(tempTitleKeys[j])
+      else:
+        keysCountObj[j]= [tempTitleKeys[j]]
   ans = []
   for i in titleKeys:
-    if titleKeys[i]<10:
+    if titleKeys[i]<2:
       continue
+    allDatas = keysCountObj[i]
+    sum = 0
+    for count in allDatas:
+      sum = count + sum
+    u = sum / dataTotalCount
+    sd = 0
+    for count in allDatas:
+      sd = sd + math.pow((count-u), 2)
+    sd = math.sqrt(sd/dataTotalCount)
     ans.append({
       'key': i,
-      'count': titleKeys[i]
+      'count': titleKeys[i],
+      'u': u,
+      'sd': sd
     })
+  totalCount = 0
+  for cur in ans:
+    totalCount = totalCount + cur['count']
+    cur['count']
+  for i in range(0, len(ans)):
+    ans[i]['radio'] = ans[i]['count']/totalCount
   ans = pd.DataFrame(ans).sort_values(by='count',ascending=False)
   return ans
 
+#数据结构转换
 def listToDict(contentWords):
   dictWords = {}
   for word in contentWords:
@@ -76,3 +104,7 @@ def listToDict(contentWords):
     else:
       dictWords[word] = 1
   return dictWords
+
+def completeP(x, u, sd):
+  pass
+  
